@@ -2,15 +2,23 @@ FROM node:18-alpine
 
 WORKDIR /app
 
-# Install ts-node and typescript globally
-RUN npm install -g ts-node typescript
-
+# Copy package files
 COPY package*.json ./
+
+# Install dependencies
 RUN npm install
 
+# Install TypeScript globally
+RUN npm install -g typescript
+
+# Copy source code
 COPY . .
 
+# Compile TypeScript to JavaScript
+RUN tsc
+
+# Expose port
 EXPOSE 5000
 
-# Use ts-node to run TypeScript directly
-CMD ["ts-node", "src/index.ts"]
+# Run compiled JavaScript
+CMD ["node", "dist/index.js"]
