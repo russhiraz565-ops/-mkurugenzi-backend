@@ -5,25 +5,20 @@ import WebSocket from 'ws';
 
 const app = express();
 
-// ✅ FIX CORS - Allow all origins for now (you can restrict later)
+// ✅ CORS configuration - simpler
 app.use(cors({
-    origin: '*',
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization']
+    origin: true,
+    credentials: true
 }));
-
-// Handle preflight requests
-app.options('*', cors());
 
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
 
-console.log('Checking environment variables...');
 console.log('SUPABASE_URL:', supabaseUrl ? '✅ Found' : '❌ Missing');
 console.log('SUPABASE_ANON_KEY:', supabaseAnonKey ? '✅ Found' : '❌ Missing');
 
 if (!supabaseUrl || !supabaseAnonKey) {
-    console.error('❌ Missing required environment variables!');
+    console.error('Missing environment variables!');
     process.exit(1);
 }
 
@@ -61,7 +56,7 @@ app.post('/api/orders', async (req, res) => {
         
         if (error) throw error;
         
-        console.log(`✅ Order received from ${fullName}`);
+        console.log(`Order received from ${fullName}`);
         res.json({ success: true, message: 'Order received!' });
     } catch (error) {
         console.error('Order error:', error);
@@ -81,7 +76,7 @@ app.post('/api/messages', async (req, res) => {
         }]);
         
         if (error) throw error;
-        console.log(`📨 Message from ${name}`);
+        console.log(`Message from ${name}`);
         res.json({ success: true, message: 'Message sent!' });
     } catch (error) {
         console.error('Message error:', error);
@@ -90,5 +85,5 @@ app.post('/api/messages', async (req, res) => {
 });
 
 app.listen(PORT, '0.0.0.0', () => {
-    console.log(`🚀 Server running on port ${PORT}`);
+    console.log(`Server running on port ${PORT}`);
 });
