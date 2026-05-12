@@ -1,4 +1,4 @@
-FROM node:18-alpine
+FROM node:20-alpine
 
 WORKDIR /app
 
@@ -8,14 +8,11 @@ COPY package*.json ./
 # Install dependencies
 RUN npm install
 
-# Install TypeScript globally
-RUN npm install -g typescript
-
 # Copy source code
 COPY . .
 
 # Compile TypeScript to JavaScript
-RUN tsc
+RUN npx tsc
 
 # Expose port
 EXPOSE 5000
