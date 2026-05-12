@@ -1,26 +1,15 @@
 import express from 'express';
 import cors from 'cors';
 import { createClient } from '@supabase/supabase-js';
-import WebSocket from 'ws';
 
 const app = express();
-
-// CORS - allow all
 app.use(cors());
-
 app.use(express.json());
 
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
 
-if (!supabaseUrl || !supabaseAnonKey) {
-    console.error('Missing environment variables');
-    process.exit(1);
-}
-
-const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-    realtime: { transport: WebSocket }
-});
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 const PORT = process.env.PORT || 5000;
 
@@ -49,6 +38,7 @@ app.post('/api/orders', async (req, res) => {
         if (error) throw error;
         res.json({ success: true, message: 'Order received!' });
     } catch (error) {
+        console.error(error);
         res.status(500).json({ success: false, error: 'Payment failed' });
     }
 });
