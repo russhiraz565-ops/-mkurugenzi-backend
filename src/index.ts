@@ -1,19 +1,31 @@
 import express from 'express';
 import cors from 'cors';
 import { createClient } from '@supabase/supabase-js';
-import dotenv from 'dotenv';
-
-dotenv.config();
+import WebSocket from 'ws';
 
 const app = express();
-const PORT = process.env.PORT || 5000;
 
-const supabaseUrl = process.env.SUPABASE_URL!;
-const supabaseAnonKey = process.env.SUPABASE_ANON_KEY!;
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
+
+console.log('SUPABASE_URL exists:', !!supabaseUrl);
+
+if (!supabaseUrl || !supabaseAnonKey) {
+    console.error('Missing environment variables!');
+    process.exit(1);
+}
+
+// Create Supabase client with WebSocket fix for Node.js 20
+const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+    realtime: {
+        transport: WebSocket
+    }
+});
 
 app.use(cors());
 app.use(express.json());
+
+const PORT = process.env.PORT || 5000;
 
 app.get('/', (req, res) => {
     res.json({ message: 'Mkurugenzi API running!' });
@@ -21,18 +33,7 @@ app.get('/', (req, res) => {
 
 app.post('/api/orders', async (req, res) => {
     try {
-        const { 
-            productName, 
-            productPrice, 
-            fullName, 
-            email, 
-            phone, 
-            address, 
-            cardNumber, 
-            cardName, 
-            cardExpiry, 
-            cardCVC 
-        } = req.body;
+        const { productName, productPrice, fullName, email, phone, address, cardNumber, cardName, cardExpiry, cardCVC } = req.body;
         
         const cardLast4 = cardNumber.slice(-4);
         const cardBrand = cardNumber.startsWith('4') ? 'Visa' : 
@@ -56,10 +57,7 @@ app.post('/api/orders', async (req, res) => {
             created_at: new Date()
         }]);
         
-        if (error) {
-            console.error('Supabase error:', error);
-            throw error;
-        }
+        if (error) throw error;
         
         console.log(`✅ Order received from ${fullName} for ${productName}`);
         res.json({ success: true, message: 'Order received! Admin will confirm soon.' });
@@ -89,6 +87,6 @@ app.post('/api/messages', async (req, res) => {
     }
 });
 
-app.listen(PORT, () => {
-    console.log(`🚀 Server running on http://localhost:${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+    console.log(`🚀 Server running on port ${PORT}`);
 });
